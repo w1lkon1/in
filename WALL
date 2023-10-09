@@ -1,0 +1,47 @@
+import random
+from eth_abi import encode
+from eth_utils import to_hex
+from tqdm import tqdm
+from web3 import Web3
+from loguru import logger
+from moralis import evm_api
+import time
+
+from info import abi, scans, balances, gas_holo, lzEndpointABI, holo_abi, holograph_ids, Lz_ids
+from config import rpcs
+from config import NAME, CONTRACT
+
+class Help:
+    def check_status_tx(self, tx_hash):
+        logger.info(f'{self.address} - жду подтверждения транзакции  {scans[self.chain]}{self.w3.to_hex(tx_hash)}...')
+
+        start_time = int(time.time())
+        while True:
+            current_time = int(time.time())
+            if current_time >= start_time + 100:
+                logger.info(
+                    f'{self.address} - транзакция не подтвердилась за 100 cекунд, начинаю повторную отправку...')
+                return 0
+            try:
+                status = self.w3.eth.get_transaction_receipt(tx_hash)['status']
+                if status == 1:
+                    return status
+                time.sleep(1)
+            except Exception as error:
+                time.sleep(1)
+
+    def sleep_indicator(self, sec):
+        for i in tqdm(range(sec), desc='жду', bar_format="{desc}: {n_fmt}c /{total_fmt}c {bar}", colour='green'):
+            time.sleep(1)
+
+class Minter(Help):
+    def __init__(self, privatekey, chain, count, delay, mode):
+        self.privatekey = privatekey
+        self.chain = chain if chain else ''
+        self.drop_address = Web3.to_checksum_address(CONTRACT)
+        self.mode = mode
+        self.count = random.randint(count[0], count[1]) if type(count) == list else count
+        self.w3 = ''
+        self.delay = random.randint(delay[0], delay[1])
+        self.account = ''
+        self.address = ''
